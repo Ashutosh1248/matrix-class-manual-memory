@@ -72,4 +72,29 @@ Matrix::Matrix(const Matrix& m) :r(m.r), c(m.c), ptr(new double[r*c]){
 	std::cout<<"\ncopied\n";
 }
 
+Matrix::Matrix(int row , int col, std::initializer_list<double> ls){
+	if(row<=0 || col<=0){
+		throw std::invalid_argument("Dimensions must be positive");
+	}else if(row*col!=ls.size()){
+		throw std::invalid_argument("Not enough values.");
+	}
+	r = row;
+	c = col;
+	ptr = new double[r*c];
+	auto d = ptr;
+	for(double i : ls){
+		*d = i;
+		++d;
+	}
+}
 
+//Destructor
+Matrix::~Matrix(){
+	std::cout<<"\n in destru\n";
+	if(ptr){
+		delete[] ptr;
+	}
+}
+
+//Move constructor
+Matrix::Matrix(Matrix &&m) : r(m.r), c(m.c), ptr(m.ptr){m.ptr = nullptr;}
