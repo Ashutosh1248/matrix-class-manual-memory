@@ -98,3 +98,37 @@ Matrix::~Matrix(){
 
 //Move constructor
 Matrix::Matrix(Matrix &&m) : r(m.r), c(m.c), ptr(m.ptr){m.ptr = nullptr;}
+
+//copy assignment operator
+Matrix &Matrix::operator=(Matrix rhs){
+	swap(*this, rhs);
+	std::cout<<"\nIn copy assig\n";
+	return *this;
+}
+
+void Matrix::swap(Matrix& m1, Matrix &m2){
+	using std::swap;
+	swap(m1.ptr, m2.ptr);
+	swap(m1.r, m2.r);
+	swap(m1.c,m2.c);
+}
+
+double &Matrix::at(int i, int j){
+	check(i,j);
+	return ptr[r*i+j];
+}
+
+const double &Matrix::at(int i, int j)const{
+	check(i,j);
+	return ptr[r*i+j];
+}
+
+void Matrix::check(int i , int j)const{
+	if(r==0 && c==0){
+		throw std::out_of_range("Empty Matrix");
+	}else if(i<0 || j < 0){
+		throw std::out_of_range("Index cant be negative");
+	}else if(i>=r || j>=c){
+		throw std::out_of_range("Out of range i or j");
+	}
+}

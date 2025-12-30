@@ -14,6 +14,11 @@ class Matrix{
 		Matrix(const Matrix& m);
 		~Matrix();
 		Matrix(Matrix &&);
+		Matrix &operator=(Matrix m);
+		void swap(Matrix& m1, Matrix &m2);
+		double &at(int i, int j);
+		const double &at(int i, int j)const;
+
 
 		inline std::size_t rows()const;
 		inline std::size_t cols()const;
@@ -22,6 +27,7 @@ class Matrix{
 		std::size_t r;
 		std::size_t c;
 		double *ptr;
+		void check(int i , int j)const;
 };
 
 

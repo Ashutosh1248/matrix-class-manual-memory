@@ -6,20 +6,12 @@ using std::cout;
 int main(){
 	
 	try{
-		Matrix m1(2,3);
-		cout<<"\nm1: ";
-		getinfo(m1);
-		Matrix m2(std::move(m1));
-		cout<<"\nm2: ";
-		getinfo(m2);
-		cout<<"\nm1: ";
-		getinfo(m1);
-		cout<<m1.size()<<" "<<m2.size();
+		const Matrix m({{1},{2},{3}});
+		cout<<m.at(0,0);
+		cout<<"\n cols: "<<m.cols()<<"\nrows: "<<m.rows();
 		return EXIT_SUCCESS;
 	}catch(const std::exception &e){
-		cout<<"\nError: "<<e.what()<<" !!.";
+		cout<<"\nError: "<<e.what()<<" !!";
 	}
-	
-
-	return 1;
+	return EXIT_FAILURE;
 }
