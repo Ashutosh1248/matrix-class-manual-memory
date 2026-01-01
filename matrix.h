@@ -5,6 +5,8 @@
 #include <initializer_list>
 class Matrix{
 	friend inline void getinfo(const Matrix &m);
+
+	friend std::ostream &operator<<(std::ostream& out, const Matrix &m);
 	public:
 		Matrix();
 		Matrix(int row, int col);
@@ -15,14 +17,17 @@ class Matrix{
 		~Matrix();
 		Matrix(Matrix &&);
 		Matrix &operator=(Matrix m);
-		void swap(Matrix& m1, Matrix &m2);
+		void swap(Matrix &m2)noexcept;
 		double &at(int i, int j);
 		const double &at(int i, int j)const;
-
-
+		Matrix hadamard(const Matrix &m)const;
+		void resize(int , int);
+		
+		inline void clear();
 		inline std::size_t rows()const;
 		inline std::size_t cols()const;
 		inline std::size_t size()const;
+		inline bool empty()const;
 	private:
 		std::size_t r;
 		std::size_t c;
@@ -31,9 +36,10 @@ class Matrix{
 };
 
 
-
+inline void Matrix::clear(){delete[] ptr; r=c=0;ptr=nullptr;}
 inline std::size_t Matrix::rows()const{return r;}
 inline std::size_t Matrix::cols()const{return c;}
 inline std::size_t Matrix::size()const{return r*c;}
+inline bool Matrix::empty()const{return r==0;}
 inline void getinfo(const Matrix &m){std::cout<<"\n"<<m.ptr<<"\n";}
 #endif

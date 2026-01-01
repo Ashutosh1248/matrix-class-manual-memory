@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <initializer_list>
+#include <iomanip>
 #include "matrix.h"
 
 Matrix::Matrix() : r(0), c(0),ptr(nullptr){}
@@ -25,6 +26,7 @@ Matrix::Matrix(int row, int col, double val){
 	c= col;
 	ptr= new double[r*c];
 	std::fill(ptr, ptr+r*c,val);
+	
 }
 
 Matrix::Matrix(std::initializer_list<std::initializer_list<double>> ls){
@@ -38,7 +40,7 @@ Matrix::Matrix(std::initializer_list<std::initializer_list<double>> ls){
 	if(!beg->size()){throw std::invalid_argument("Dimensions must be positive");}
 	c = beg->size();
 	ptr = new double[c*r];
-	auto d = ptr;
+	int d = 0;
 	while(beg!=en){
 
 		//checks row sizes
@@ -48,12 +50,12 @@ Matrix::Matrix(std::initializer_list<std::initializer_list<double>> ls){
 			//cleaning resources before throwing.
 			
 			delete[] ptr;
-			ptr = d = nullptr;
+			ptr = nullptr;
 			throw std::invalid_argument("All rows must have same size.");
 		}
 
 		for(double i : *beg){
-			*d = i;
+			ptr[d] = i;
 			++d;
 		}
 		++beg;
@@ -62,14 +64,10 @@ Matrix::Matrix(std::initializer_list<std::initializer_list<double>> ls){
 
 
 Matrix::Matrix(const Matrix& m) :r(m.r), c(m.c), ptr(new double[r*c]){
-	auto d = ptr;
-	auto md=m.ptr;
 	auto sz = r*c;
 	for(int i = 0;i<sz;++i){
-		*d=*md;
-		++md;
+		ptr[i]=m.ptr[i];
 	}
-	std::cout<<"\ncopied\n";
 }
 
 Matrix::Matrix(int row , int col, std::initializer_list<double> ls){
@@ -81,16 +79,15 @@ Matrix::Matrix(int row , int col, std::initializer_list<double> ls){
 	r = row;
 	c = col;
 	ptr = new double[r*c];
-	auto d = ptr;
-	for(double i : ls){
-		*d = i;
-		++d;
+	int i = 0;
+	for(double d : ls){
+		ptr[i] = d;
+		++i;
 	}
 }
 
 //Destructor
 Matrix::~Matrix(){
-	std::cout<<"\n in destru\n";
 	if(ptr){
 		delete[] ptr;
 	}
@@ -101,26 +98,25 @@ Matrix::Matrix(Matrix &&m) : r(m.r), c(m.c), ptr(m.ptr){m.ptr = nullptr;}
 
 //copy assignment operator
 Matrix &Matrix::operator=(Matrix rhs){
-	swap(*this, rhs);
-	std::cout<<"\nIn copy assig\n";
+	this->swap(rhs);
 	return *this;
 }
 
-void Matrix::swap(Matrix& m1, Matrix &m2){
+void Matrix::swap(Matrix &m2)noexcept{
 	using std::swap;
-	swap(m1.ptr, m2.ptr);
-	swap(m1.r, m2.r);
-	swap(m1.c,m2.c);
+	swap(ptr, m2.ptr);
+	swap(r, m2.r);
+	swap(c,m2.c);
 }
 
 double &Matrix::at(int i, int j){
 	check(i,j);
-	return ptr[r*i+j];
+	return ptr[c*i+j];
 }
 
 const double &Matrix::at(int i, int j)const{
 	check(i,j);
-	return ptr[r*i+j];
+	return ptr[c*i+j];
 }
 
 void Matrix::check(int i , int j)const{
@@ -131,4 +127,53 @@ void Matrix::check(int i , int j)const{
 	}else if(i>=r || j>=c){
 		throw std::out_of_range("Out of range i or j");
 	}
+}
+
+Matrix Matrix::hadamard(const Matrix &m)const{
+	if(r!=m.r || c!=m.c){
+		throw std::invalid_argument("Dimensions must match for hadamard product.");
+	}
+	Matrix result(r,c);
+	auto sz = size();
+	for(int i = 0;i<sz; ++i){
+		result.ptr[i] = m.ptr[i]*ptr[i];
+	}
+	return result;
+}
+
+std::ostream &operator<<(std::ostream& out, const Matrix &m){
+	out<<std::fixed<<std::right<<std::setprecision(2);
+	out<<"\nMatrix("<<m.r<<","<<m.c<<"): \n";
+	if(m.size()==0){out<<"[empty]";return out;}
+	for(int i = 0 ; i<m.r;++i){
+		out<<"[";
+		for(int j = 0; j<m.c;++j){
+			out<<std::setw(7)<<m.ptr[i*m.c + j];
+			if(j!= m.c-1){out<<", ";}
+		}
+		out<<"]\n";
+	}
+	out<<std::defaultfloat;
+	out<<"\n";
+	return out;
+}
+
+void Matrix::resize(int i , int j){
+	if(i <= 0 || j<=0){
+		throw std::invalid_argument("Dimensions must be positive");
+	}
+	auto nptr = new double[i*j];
+	for(int row = 0; row<i;++row){
+		for(int col = 0; col<j;++col){
+			if(row<r && col<c){
+				nptr[row*j+col] = ptr[row*c+col];
+			}else{
+				nptr[row*j+col] = 0;
+			}
+		}
+	}
+	delete[] ptr;
+	ptr = nptr;
+	r = i;
+	c= j;
 }
