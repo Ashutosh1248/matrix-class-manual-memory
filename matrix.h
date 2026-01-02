@@ -3,26 +3,41 @@
 
 #include <iostream>
 #include <initializer_list>
-class Matrix{
-	friend inline void getinfo(const Matrix &m);
 
-	friend std::ostream &operator<<(std::ostream& out, const Matrix &m);
+inline constexpr double epsilon{1e-9};
+//const std::vector<int> index = {0, 4, 8, 5, 7, 1, 3, 8, 5, 6, 2, 3, 7, 4, 6};
+using func=void(*)(double&);
+class Matrix{
+	friend inline void getinfo(const Matrix &);
+
+	friend bool operator==(const Matrix &,const Matrix &);
+	friend bool operator!=(const Matrix &,const Matrix &);
+
+	friend std::ostream &operator<<(std::ostream&, const Matrix &);
 	public:
 		Matrix();
-		Matrix(int row, int col);
-		Matrix(int r, int c, double val);
+		Matrix(const int,const int);
+		Matrix(const int, const int, const double);
 		Matrix(std::initializer_list<std::initializer_list<double>> ls);
-		Matrix(int row , int col, std::initializer_list<double> ls);
-		Matrix(const Matrix& m);
+		Matrix(const int, const int, std::initializer_list<double>);
+		Matrix(const Matrix&);
 		~Matrix();
-		Matrix(Matrix &&);
-		Matrix &operator=(Matrix m);
-		void swap(Matrix &m2)noexcept;
-		double &at(int i, int j);
-		const double &at(int i, int j)const;
-		Matrix hadamard(const Matrix &m)const;
-		void resize(int , int);
-		
+		Matrix(Matrix &&)noexcept;
+		Matrix &operator=(Matrix);
+		void swap(Matrix &)noexcept;
+		double &at(const int ,const int );
+		const double &at(const int, const int)const;
+		Matrix hadamard(const Matrix &)const;
+		void resize(const int , const int);
+		Matrix submatrix(const int, const int, const int, const int)const;
+		void apply(func);
+		Matrix map(func);
+		Matrix get_row(const int)const;
+		Matrix get_col(const int)const;
+		static Matrix Identity(const int);
+		double Determinant()const;
+
+		inline void fill(const double);
 		inline void clear();
 		inline std::size_t rows()const;
 		inline std::size_t cols()const;
@@ -32,10 +47,11 @@ class Matrix{
 		std::size_t r;
 		std::size_t c;
 		double *ptr;
-		void check(int i , int j)const;
+		void check(const int, const int)const;
 };
 
 
+inline void Matrix::fill(const double val){std::fill(ptr, ptr+r*c,val);}
 inline void Matrix::clear(){delete[] ptr; r=c=0;ptr=nullptr;}
 inline std::size_t Matrix::rows()const{return r;}
 inline std::size_t Matrix::cols()const{return c;}

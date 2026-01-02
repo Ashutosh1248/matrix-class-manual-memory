@@ -4,11 +4,13 @@
 #include <stdexcept>
 #include <initializer_list>
 #include <iomanip>
+#include <sstream>
+#include <cmath>
 #include "matrix.h"
 
 Matrix::Matrix() : r(0), c(0),ptr(nullptr){}
 
-Matrix::Matrix(int row, int col){
+Matrix::Matrix(const int row, const int col){
 	if(row<=0 || col<=0){
 		throw std::invalid_argument("Dimensions must be positive");
 	}
@@ -18,7 +20,7 @@ Matrix::Matrix(int row, int col){
 
 }
 
-Matrix::Matrix(int row, int col, double val){
+Matrix::Matrix(const int row,const int col, const double val){
 	if(row<=0 || col<=0){
 		throw std::invalid_argument("Dimensions must be positive");
 	}
@@ -70,7 +72,7 @@ Matrix::Matrix(const Matrix& m) :r(m.r), c(m.c), ptr(new double[r*c]){
 	}
 }
 
-Matrix::Matrix(int row , int col, std::initializer_list<double> ls){
+Matrix::Matrix(const int row ,const int col, std::initializer_list<double> ls){
 	if(row<=0 || col<=0){
 		throw std::invalid_argument("Dimensions must be positive");
 	}else if(row*col!=ls.size()){
@@ -94,7 +96,7 @@ Matrix::~Matrix(){
 }
 
 //Move constructor
-Matrix::Matrix(Matrix &&m) : r(m.r), c(m.c), ptr(m.ptr){m.ptr = nullptr;}
+Matrix::Matrix(Matrix &&m)noexcept: r(m.r), c(m.c), ptr(m.ptr){m.ptr = nullptr;}
 
 //copy assignment operator
 Matrix &Matrix::operator=(Matrix rhs){
@@ -109,17 +111,17 @@ void Matrix::swap(Matrix &m2)noexcept{
 	swap(c,m2.c);
 }
 
-double &Matrix::at(int i, int j){
+double &Matrix::at(const int i, const int j){
 	check(i,j);
 	return ptr[c*i+j];
 }
 
-const double &Matrix::at(int i, int j)const{
+const double &Matrix::at(const int i,const int j)const{
 	check(i,j);
 	return ptr[c*i+j];
 }
 
-void Matrix::check(int i , int j)const{
+void Matrix::check(const int i , const int j)const{
 	if(r==0 && c==0){
 		throw std::out_of_range("Empty Matrix");
 	}else if(i<0 || j < 0){
@@ -142,23 +144,25 @@ Matrix Matrix::hadamard(const Matrix &m)const{
 }
 
 std::ostream &operator<<(std::ostream& out, const Matrix &m){
-	out<<std::fixed<<std::right<<std::setprecision(2);
-	out<<"\nMatrix("<<m.r<<","<<m.c<<"): \n";
+	std::ostringstream ou("");
+	ou<<std::fixed<<std::right<<std::setprecision(2);
+	ou<<"\nMatrix("<<m.r<<","<<m.c<<"): \n";
 	if(m.size()==0){out<<"[empty]";return out;}
 	for(int i = 0 ; i<m.r;++i){
-		out<<"[";
+		ou<<"[";
 		for(int j = 0; j<m.c;++j){
-			out<<std::setw(7)<<m.ptr[i*m.c + j];
-			if(j!= m.c-1){out<<", ";}
+			ou<<std::setw(7)<<m.ptr[i*m.c + j];
+			if(j!= m.c-1){ou<<", ";}
 		}
-		out<<"]\n";
+		ou<<"]\n";
 	}
-	out<<std::defaultfloat;
-	out<<"\n";
+	ou<<std::defaultfloat;
+	ou<<"\n";
+	out<<ou.str();
 	return out;
 }
 
-void Matrix::resize(int i , int j){
+void Matrix::resize(const int i , const int j){
 	if(i <= 0 || j<=0){
 		throw std::invalid_argument("Dimensions must be positive");
 	}
@@ -176,4 +180,84 @@ void Matrix::resize(int i , int j){
 	ptr = nptr;
 	r = i;
 	c= j;
+}
+
+Matrix Matrix::submatrix(const int row_start, const int row_end, const int col_start, const int col_end)const{
+	if(row_start>=r || col_start>=c || row_start>=row_end || col_start>=col_end)
+		throw std::invalid_argument("Invalid row/column range");
+	else if(row_end > r || col_end > c)
+		throw std::invalid_argument("Submatrix range out of bounds");
+	Matrix m(row_end - row_start, col_end -col_start);
+	auto sz = m.size();
+	for(int i = row_start; i<row_end;++i){
+		for(int j = col_start; j<col_end;++j){
+			m.ptr[(i-row_start)*m.c+j-col_start] = ptr[i*c+j];
+		}
+	}
+	return m;
+
+}
+
+void Matrix::apply(func f){
+	auto lambda = [f](double &d){f(d);};
+	std::for_each(ptr, ptr+r*c, lambda);
+}
+
+Matrix Matrix::map(func f){
+	Matrix m = *this;
+	m.apply(f);
+	return m;
+}
+
+bool operator==(const Matrix &lhs,const Matrix &rhs){
+	if(rhs.rows() != lhs.rows() || lhs.cols() != lhs.cols())
+		return false;
+	auto sz = lhs.size();
+	for(int i = 0;i<sz;++i){
+		if(std::abs(rhs.ptr[i]-lhs.ptr[i])>=epsilon){
+			return false;
+		}
+	}
+	return true;
+
+}
+
+bool operator!=(const Matrix &lhs, const Matrix &rhs){
+	return !(lhs==rhs);
+}
+Matrix Matrix::get_col(const int j)const{
+	check(1,j);
+	Matrix m = submatrix(0,r,j,j+1);
+	return m;
+}
+
+Matrix Matrix::get_row(const int i)const{
+	check(i,1);
+	Matrix m = submatrix(i,i+1,0,c);
+	return m;
+}
+
+Matrix Matrix::Identity(const int dim){
+	if(dim<=0)
+		throw std::invalid_argument("Identity matrix size must be positive");
+	Matrix m(dim, dim);
+	for(int i = 0; i<dim; ++i){
+		m.ptr[i*m.c+i]=1;
+	}
+	return m;
+}
+
+
+double Matrix::Determinant()const{
+	if(c!=r || c>3)
+		throw std::invalid_argument("Determinant only implemented for 2 cross 2 and 3 cross 3 matrices");
+	else if(this->empty())
+		throw std::invalid_argument("Cannot compute determinant of empty matrix");
+	if(r==2){
+		//determinant formula of 2*2 matrix
+		return ptr[0]*ptr[3] - ptr[2]*ptr[1];
+	}
+	//Determinant formula of 3*3 matrix.
+
+	return ptr[0]*(ptr[4]*ptr[8]-ptr[5]*ptr[7])-ptr[1]*(ptr[3]*ptr[8] - ptr[5]*ptr[6])+ptr[2]*(ptr[3]*ptr[7]-ptr[4]*ptr[6]);
 }
