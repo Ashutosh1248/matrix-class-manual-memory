@@ -38,6 +38,8 @@ Matrix::Matrix(std::initializer_list<std::initializer_list<double>> ls){
 	if(!ls.size()){throw std::invalid_argument("Empty list provided.");}
 	r = ls.size();
 	auto beg = ls.begin(), en = ls.end();
+
+	//checking for empty column
 	
 	if(!beg->size()){throw std::invalid_argument("Dimensions must be positive");}
 	c = beg->size();
@@ -98,7 +100,7 @@ Matrix::~Matrix(){
 //Move constructor
 Matrix::Matrix(Matrix &&m)noexcept: r(m.r), c(m.c), ptr(m.ptr){m.ptr = nullptr;}
 
-//copy assignment operator
+//copy and move assignment operator
 Matrix &Matrix::operator=(Matrix rhs){
 	this->swap(rhs);
 	return *this;
@@ -144,21 +146,21 @@ Matrix Matrix::hadamard(const Matrix &m)const{
 }
 
 std::ostream &operator<<(std::ostream& out, const Matrix &m){
-	std::ostringstream ou("");
-	ou<<std::fixed<<std::right<<std::setprecision(2);
-	ou<<"\nMatrix("<<m.r<<","<<m.c<<"): \n";
+	std::ostringstream oss("");
+	oss<<std::fixed<<std::right<<std::setprecision(2);
+	oss<<"\nMatrix("<<m.r<<","<<m.c<<"): \n";
 	if(m.size()==0){out<<"[empty]";return out;}
 	for(int i = 0 ; i<m.r;++i){
-		ou<<"[";
+		oss<<"[";
 		for(int j = 0; j<m.c;++j){
-			ou<<std::setw(7)<<m.ptr[i*m.c + j];
-			if(j!= m.c-1){ou<<", ";}
+			oss<<std::setw(7)<<m.ptr[i*m.c + j];
+			if(j!= m.c-1){oss<<", ";}
 		}
-		ou<<"]\n";
+		oss<<"]\n";
 	}
-	ou<<std::defaultfloat;
-	ou<<"\n";
-	out<<ou.str();
+	oss<<std::defaultfloat;
+	oss<<"\n";
+	out<<oss.str();
 	return out;
 }
 
@@ -166,6 +168,7 @@ void Matrix::resize(const int i , const int j){
 	if(i <= 0 || j<=0){
 		throw std::invalid_argument("Dimensions must be positive");
 	}
+
 	auto nptr = new double[i*j];
 	for(int row = 0; row<i;++row){
 		for(int col = 0; col<j;++col){
@@ -176,6 +179,9 @@ void Matrix::resize(const int i , const int j){
 			}
 		}
 	}
+
+	//freeing previous state
+	
 	delete[] ptr;
 	ptr = nptr;
 	r = i;
@@ -187,6 +193,9 @@ Matrix Matrix::submatrix(const int row_start, const int row_end, const int col_s
 		throw std::invalid_argument("Invalid row/column range");
 	else if(row_end > r || col_end > c)
 		throw std::invalid_argument("Submatrix range out of bounds");
+	else if(row_start<=0 || col_start<=0)
+		throw std::invalid_argument("Invalid row/column range");
+
 	Matrix m(row_end - row_start, col_end -col_start);
 	auto sz = m.size();
 	for(int i = row_start; i<row_end;++i){
@@ -194,6 +203,7 @@ Matrix Matrix::submatrix(const int row_start, const int row_end, const int col_s
 			m.ptr[(i-row_start)*m.c+j-col_start] = ptr[i*c+j];
 		}
 	}
+
 	return m;
 
 }
@@ -226,13 +236,11 @@ bool operator!=(const Matrix &lhs, const Matrix &rhs){
 	return !(lhs==rhs);
 }
 Matrix Matrix::get_col(const int j)const{
-	check(1,j);
 	Matrix m = submatrix(0,r,j,j+1);
 	return m;
 }
 
 Matrix Matrix::get_row(const int i)const{
-	check(i,1);
 	Matrix m = submatrix(i,i+1,0,c);
 	return m;
 }
@@ -260,4 +268,85 @@ double Matrix::Determinant()const{
 	//Determinant formula of 3*3 matrix.
 
 	return ptr[0]*(ptr[4]*ptr[8]-ptr[5]*ptr[7])-ptr[1]*(ptr[3]*ptr[8] - ptr[5]*ptr[6])+ptr[2]*(ptr[3]*ptr[7]-ptr[4]*ptr[6]);
+}
+
+Matrix operator+(const Matrix& lhs, const Matrix& rhs){
+	Matrix m = lhs;
+	m+=rhs;
+	return m;
+}
+
+Matrix& Matrix::operator+=(const Matrix& rhs){
+	if(r!=rhs.rows() || c!=rhs.cols())
+		throw std::invalid_argument("Matrix dimensions must match for addition");
+	auto sz = r*c;
+	for(int i = 0; i<sz; ++i){
+		ptr[i]+=rhs.ptr[i];
+	}
+	return *this;
+}
+Matrix operator-(const Matrix& lhs, const Matrix& rhs){
+	Matrix m = lhs;
+	m-=rhs;
+	return m;
+}
+
+Matrix& Matrix::operator-=(const Matrix& rhs){
+	if(r!=rhs.rows() || c!=rhs.cols())
+		throw std::invalid_argument("Matrix dimensions must match for addition");
+	auto sz = r*c;
+	for(int i = 0; i<sz; ++i){
+		ptr[i]-=rhs.ptr[i];
+	}
+	return *this;
+}
+Matrix operator*(const Matrix& lhs, const Matrix& rhs){
+	if(lhs.cols()!=rhs.rows())
+		throw std::invalid_argument("Matrix dimensions must match for addition");
+	Matrix m=lhs;
+	m*=rhs;
+	return m;
+}
+
+Matrix& Matrix::operator*=(const Matrix& rhs){
+	double val=0;
+	Matrix temp(r,rhs.c);
+	for(int i = 0;i<r;++i){
+		for(int j = 0;j<rhs.c;++j){
+			for(int k = 0; k<c;++k){
+				val+=ptr[i*c+k]*rhs.ptr[k*rhs.c+j];
+			}
+			temp.ptr[i*rhs.c+j] = val;
+			val=0;
+		}
+	}
+	this->swap(temp);
+	return *this;
+}
+
+Matrix operator*(const Matrix& m, double num){
+	Matrix result(m.rows(),m.cols());
+	for(int i = 0; i < m.size(); ++i){
+		result.ptr[i] = m.ptr[i]*num;
+	}
+	return result;
+}
+Matrix operator*(double i, const Matrix& m){
+	return operator*(m,i);
+}
+
+Matrix operator/(Matrix &m, double d){
+	if(abs(d)<=epsilon)
+		throw std::invalid_argument("Cannot divide by zero");
+	Matrix result = m;
+	result/=d;
+	return result;
+}
+
+Matrix &Matrix::operator/=(double d){
+	auto sz = size();
+	for(int i = 0; i<sz;++i){
+		ptr[i]=ptr[i]/d;
+	}
+	return *this;
 }

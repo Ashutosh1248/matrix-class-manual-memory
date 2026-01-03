@@ -9,13 +9,11 @@ int main(){
 	
 	try{
 		auto start = std::chrono::high_resolution_clock::now();
-		Matrix m3(3,3);
-
-		Matrix m4(2,2,{3,0,0,3});
-		cout<<m4;
-		Matrix m5 = Matrix::Identity(3);
-		Matrix m6 = m5;
-		cout<<m3.Determinant();
+		Matrix m3 = Matrix::Identity(10);
+		Matrix m5(10,10, 800);
+		Matrix m6 = m3*m5;
+		cout<<m3;
+		cout<<m6;
 		auto end =std::chrono::high_resolution_clock::now(); 
 		std::chrono::duration<double, std::milli> duration = end-start;
 		cout<<"\nTime taken: "<<duration.count()<<" miilliseconds.";

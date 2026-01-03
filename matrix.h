@@ -12,6 +12,12 @@ class Matrix{
 
 	friend bool operator==(const Matrix &,const Matrix &);
 	friend bool operator!=(const Matrix &,const Matrix &);
+	friend Matrix operator+(const Matrix&, const Matrix&);
+	friend Matrix operator-(const Matrix&, const Matrix&);
+	friend Matrix operator*(const Matrix&, const Matrix&);
+	friend Matrix operator*(const Matrix&, double);
+	friend Matrix operator*(double, const Matrix&);
+	friend Matrix operator/(Matrix &, double);
 
 	friend std::ostream &operator<<(std::ostream&, const Matrix &);
 	public:
@@ -36,6 +42,10 @@ class Matrix{
 		Matrix get_col(const int)const;
 		static Matrix Identity(const int);
 		double Determinant()const;
+		Matrix& operator+=(const Matrix&);
+		Matrix& operator-=(const Matrix&);
+		Matrix& operator*=(const Matrix& rhs);
+		Matrix &operator/=(double d);
 
 		inline void fill(const double);
 		inline void clear();
