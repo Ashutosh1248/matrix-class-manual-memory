@@ -3,10 +3,11 @@
 
 #include <iostream>
 #include <initializer_list>
+#include <functional>
 
 inline constexpr double epsilon{1e-9};
 //const std::vector<int> index = {0, 4, 8, 5, 7, 1, 3, 8, 5, 6, 2, 3, 7, 4, 6};
-using func=void(*)(double&);
+using func=std::function<double(double)>;
 class Matrix{
 	friend inline void getinfo(const Matrix &);
 
@@ -14,6 +15,7 @@ class Matrix{
 	friend bool operator!=(const Matrix &,const Matrix &);
 	friend Matrix operator+(const Matrix&, const Matrix&);
 	friend Matrix operator-(const Matrix&, const Matrix&);
+	friend Matrix operator-(const Matrix& rhs);
 	friend Matrix operator*(const Matrix&, const Matrix&);
 	friend Matrix operator*(const Matrix&, double);
 	friend Matrix operator*(double, const Matrix&);
@@ -41,11 +43,16 @@ class Matrix{
 		Matrix get_row(const int)const;
 		Matrix get_col(const int)const;
 		static Matrix Identity(const int);
+		static void multiply(const Matrix &lhs, const Matrix &rhs,Matrix &c);
+		static void blocked_kernel(const Matrix &lhs, const Matrix &rhs,Matrix &c);
 		double Determinant()const;
+		Matrix transpose()const;
+		Matrix inverse()const;
 		Matrix& operator+=(const Matrix&);
 		Matrix& operator-=(const Matrix&);
 		Matrix& operator*=(const Matrix& rhs);
 		Matrix &operator/=(double d);
+		double operator()(int, int);
 
 		inline void fill(const double);
 		inline void clear();
