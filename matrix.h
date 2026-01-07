@@ -8,7 +8,6 @@
 inline constexpr double epsilon{1e-9};
 
 
-//const std::vector<int> index = {0, 4, 8, 5, 7, 1, 3, 8, 5, 6, 2, 3, 7, 4, 6};
 
 using func=std::function<double(double)>;
 class Matrix{
@@ -56,6 +55,7 @@ class Matrix{
 		Matrix& operator*=(const Matrix& rhs);
 		Matrix &operator/=(double d);
 		double operator()(int, int);
+		double operator()(int i, int j)const;
 
 		inline void fill(const double);
 		inline void clear();

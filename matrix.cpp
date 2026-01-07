@@ -233,7 +233,7 @@ Matrix Matrix::map(func f){
 }
 
 bool operator==(const Matrix &lhs,const Matrix &rhs){
-	if(rhs.rows() != lhs.rows() || lhs.cols() != lhs.cols())
+	if(rhs.rows() != lhs.rows() || lhs.cols() != rhs.cols())
 		return false;
 	std::size_t sz = lhs.size();
 	for(std::size_t i = 0;i<sz;++i){
@@ -271,23 +271,22 @@ Matrix Matrix::Identity(const int dim){
 
 double Matrix::Determinant()const{
 
-	//checking for non square and dim > 3 matrices
-	
-	if(c!=r || c>3)
-		throw std::invalid_argument("Determinant only implemented for 2 cross 2 and 3 cross 3 matrices");
-	
-	//checking for empty and 1*1 matrices
-	
-	else if(empty() || r==1)
-		throw std::invalid_argument("Cannot compute determinant of empty matrix");
+	if(empty())
+		throw std::invalid_argument("Cannot compute determinant of empty matrix.");
+	if(c!=r)
+		throw std::invalid_argument("Determinant requires square matrix");
+	if(r>3)
+		throw std::invalid_argument("Determinant only implemented for 2x2 and 3x3 matrices");
+	if(r==1)
+		return ptr[0];
 	if(r==2){
 
-		//determinant formula of 2*2 matrix
+		//determinant formula of 2x2 matrix
 		
 		return ptr[0]*ptr[3] - ptr[2]*ptr[1];
 	}
 
-	//Determinant formula of 3*3 matrix.
+	//Determinant formula of 3x3 matrix.
 
 	return ptr[0]*(ptr[4]*ptr[8]-ptr[5]*ptr[7])-ptr[1]*(ptr[3]*ptr[8] - ptr[5]*ptr[6])+ptr[2]*(ptr[3]*ptr[7]-ptr[4]*ptr[6]);
 }
@@ -406,8 +405,15 @@ Matrix &Matrix::operator/=(double d){
 }
 
 double Matrix::operator()(int i, int j){
+	check(i,j);
 	return ptr[i*c+j];
 }
+
+double Matrix::operator()(int i, int j)const{
+	check(i,j);
+	return ptr[i*c+j];
+}
+
 
 Matrix Matrix::transpose()const{
 	if(empty()){return *this;}
@@ -421,8 +427,8 @@ Matrix Matrix::transpose()const{
 }
 
 Matrix Matrix::inverse()const{
-	if(r==c && c>=3){
-		throw std::invalid_argument("Inverse only implement fro 2 cross 2 matrices");
+	if(r!=c || c!=2){
+		throw std::invalid_argument("Inverse only implement for 2x2 matrices");
 	}
 	double d = Determinant();
 	if( abs(d)< 1e-10 ){

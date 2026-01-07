@@ -50,6 +50,12 @@ void test_assignment() {
     Matrix c = std::move(a);
     assert(c.rows()==2);
     assert(a.empty());
+
+    Matrix m1(2,3);
+    Matrix m2(2,4);
+    assert(m1!=m2);
+
+
 }
 
 void test_access() {
@@ -58,6 +64,8 @@ void test_access() {
     EXPECT_THROW(a.at(0,-1), std::out_of_range);
     EXPECT_THROW(a.at(3,0), std::out_of_range);
     EXPECT_THROW(a.at(0,3), std::out_of_range);
+    EXPECT_THROW(a(0,3), std::out_of_range);
+    EXPECT_THROW(a(-1,1), std::out_of_range);
 }
 
 void test_arithmetic() {

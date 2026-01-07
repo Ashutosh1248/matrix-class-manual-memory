@@ -3,7 +3,6 @@
 
 This document explains the architectural and performance-related choices made in the Matrix library
 
---
 
 ## Memory Layout
 
@@ -14,16 +13,13 @@ This document explains the architectural and performance-related choices made in
 - Enables fast row-major traversal
 - Allows pointer swapping for O(1) move operators
 
---
 
 ## Bounds Checking 
 
 Two element access methods are provided:
 
 - `at()` - performs bounds checking and throws on invalid indices 
-- `operator()(i,j)` - unchecked for performance matters
-
---
+- `operator()(i,j)` - performs bounds checking and throws on invalid indices 
 
 ## Move Semantics
 
@@ -47,7 +43,6 @@ Matrix multiplication uses:
 - Maximizes linear memory traversal
 - Greatly reduces cache misses for large matrices 
 
---
 
 ## Output Streming Optimization
 
@@ -61,7 +56,6 @@ Matrix multiplication uses:
 This improves printing perfromance by  **orders of magnitude** for large
 matrices.
 
---
 
 ## Tranpose Strategy
 
@@ -71,7 +65,6 @@ Transpose produces a new matrix with row-major traversal.
 - Enables linear memory access in later multiplications
 - Improves cache locality dramatically
 
---
 
 ## Inverse Support
 
@@ -80,7 +73,6 @@ Matrix inverse is implemented for sequare matrix of dim 2 only.
 **why:**
 - Keeps implementation simple and deterministic
 
---
 
 ## Error Handling
 
