@@ -6,10 +6,12 @@
 #include <functional>
 
 inline constexpr double epsilon{1e-9};
+
+
 //const std::vector<int> index = {0, 4, 8, 5, 7, 1, 3, 8, 5, 6, 2, 3, 7, 4, 6};
+
 using func=std::function<double(double)>;
 class Matrix{
-	friend inline void getinfo(const Matrix &);
 
 	friend bool operator==(const Matrix &,const Matrix &);
 	friend bool operator!=(const Matrix &,const Matrix &);
@@ -20,9 +22,10 @@ class Matrix{
 	friend Matrix operator*(const Matrix&, double);
 	friend Matrix operator*(double, const Matrix&);
 	friend Matrix operator/(Matrix &, double);
-
 	friend std::ostream &operator<<(std::ostream&, const Matrix &);
+
 	public:
+
 		Matrix();
 		Matrix(const int,const int);
 		Matrix(const int, const int, const double);
@@ -60,6 +63,7 @@ class Matrix{
 		inline std::size_t cols()const;
 		inline std::size_t size()const;
 		inline bool empty()const;
+
 	private:
 		std::size_t r;
 		std::size_t c;
@@ -69,10 +73,9 @@ class Matrix{
 
 
 inline void Matrix::fill(const double val){std::fill(ptr, ptr+r*c,val);}
-inline void Matrix::clear(){delete[] ptr; r=c=0;ptr=nullptr;}
+inline void Matrix::clear(){delete[] ptr; r=0;c=0;ptr=nullptr;}
 inline std::size_t Matrix::rows()const{return r;}
 inline std::size_t Matrix::cols()const{return c;}
 inline std::size_t Matrix::size()const{return r*c;}
 inline bool Matrix::empty()const{return r==0;}
-inline void getinfo(const Matrix &m){std::cout<<"\n"<<m.ptr<<"\n";}
 #endif

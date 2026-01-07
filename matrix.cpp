@@ -7,7 +7,9 @@
 #include <sstream>
 #include <cmath>
 #include "matrix.h"
-constexpr int BLOCK = 32; 
+
+
+constexpr std::size_t BLOCK = 32; 
 constexpr std::size_t FLUSH_SIZE = 128*1024;
 
 Matrix::Matrix() : r(0), c(0),ptr(nullptr){}
@@ -100,7 +102,7 @@ Matrix::~Matrix(){
 }
 
 //Move constructor
-Matrix::Matrix(Matrix &&m)noexcept: r(m.r), c(m.c), ptr(m.ptr){m.ptr = nullptr;}
+Matrix::Matrix(Matrix &&m)noexcept: r(m.r), c(m.c), ptr(m.ptr){m.ptr = nullptr; m.r=0;m.c=0;}
 
 //copy and move assignment operator
 Matrix &Matrix::operator=(Matrix rhs){
@@ -163,7 +165,7 @@ std::ostream &operator<<(std::ostream& out, const Matrix &m){
 			if(j!= m.c-1){buf<<", ";}
 		}
 		buf<<"]\n";
-		if(buf.tellp()>= FLUSH_SIZE){
+		if((std::size_t)buf.tellp()>= FLUSH_SIZE){
 			out<<buf.str();
 			buf.str("");
 			buf.clear();
@@ -203,7 +205,7 @@ Matrix Matrix::submatrix(const int row_start, const int row_end, const int col_s
 		throw std::invalid_argument("Invalid row/column range");
 	else if(row_end > (int)r || col_end > (int)c)
 		throw std::invalid_argument("Submatrix range out of bounds");
-	else if(row_start<=0 || col_start<=0)
+	else if(row_start<0 || col_start<0)
 		throw std::invalid_argument("Invalid row/column range");
 
 	Matrix m(row_end - row_start, col_end -col_start);
@@ -268,14 +270,23 @@ Matrix Matrix::Identity(const int dim){
 
 
 double Matrix::Determinant()const{
+
+	//checking for non square and dim > 3 matrices
+	
 	if(c!=r || c>3)
 		throw std::invalid_argument("Determinant only implemented for 2 cross 2 and 3 cross 3 matrices");
-	else if(this->empty())
+	
+	//checking for empty and 1*1 matrices
+	
+	else if(empty() || r==1)
 		throw std::invalid_argument("Cannot compute determinant of empty matrix");
 	if(r==2){
+
 		//determinant formula of 2*2 matrix
+		
 		return ptr[0]*ptr[3] - ptr[2]*ptr[1];
 	}
+
 	//Determinant formula of 3*3 matrix.
 
 	return ptr[0]*(ptr[4]*ptr[8]-ptr[5]*ptr[7])-ptr[1]*(ptr[3]*ptr[8] - ptr[5]*ptr[6])+ptr[2]*(ptr[3]*ptr[7]-ptr[4]*ptr[6]);
@@ -323,11 +334,7 @@ Matrix& Matrix::operator-=(const Matrix& rhs){
 Matrix operator*(const Matrix& lhs, const Matrix& rhs){
 	if(lhs.cols()!=rhs.rows())
 		throw std::invalid_argument("Matrix dimensions must match for addition");
-	/*
-	Matrix m=lhs;
-	m*=rhs;
-	return m;
-	*/
+	
 	Matrix result(lhs.rows(), rhs.cols());
 	Matrix::multiply(lhs,rhs,result);
 	return result;
@@ -337,15 +344,17 @@ void Matrix::multiply(const Matrix &lhs, const Matrix &rhs,Matrix &c){
 	blocked_kernel(lhs, rhsT,c);
 }
 void Matrix::blocked_kernel(const Matrix &lhs, const Matrix &rhs,Matrix &c){
-	for(int ii=0;ii<lhs.r;ii+=BLOCK){
-		for(int jj = 0;jj<rhs.r;jj+=BLOCK){
-			for(int kk=0;kk<lhs.c;kk+=BLOCK){
-				for(int i = ii; i<std::min(ii+BLOCK,(int)lhs.r);++i){
-					for(int j = jj; j<std::min(jj+BLOCK, (int)rhs.r);++j){
+
+
+	for(std::size_t ii=0;ii<lhs.r;ii+=BLOCK){
+		for(std::size_t jj = 0;jj<rhs.r;jj+=BLOCK){
+			for(std::size_t kk=0;kk<lhs.c;kk+=BLOCK){
+				for(std::size_t i = ii; i<std::min(ii+BLOCK,lhs.r);++i){
+					for(std::size_t j = jj; j<std::min(jj+BLOCK, rhs.r);++j){
 						double sum = c.at(i,j);
 						const double *a = &lhs.at(i,kk);
 						const double *b=&rhs.at(j,kk);
-						for(int k = kk;k<std::min(BLOCK,(int)lhs.c - kk);++k){
+						for(std::size_t k = kk;k<std::min(BLOCK,lhs.c - kk);++k){
 							sum+=a[k]*b[k];
 						}
 						c.at(i,j)=sum;
@@ -354,52 +363,17 @@ void Matrix::blocked_kernel(const Matrix &lhs, const Matrix &rhs,Matrix &c){
 			}
 		}
 	}
+
+
 	
 }
 
 Matrix& Matrix::operator*=(const Matrix& rhs){
-	//transpose for linear traversal.
 
-	//Matrix temp(r,rhs.c) , frhs = rhs.transpose();
 	Matrix result(r,rhs.c);
 	Matrix::multiply(*this, rhs, result);
 	this->swap(result);
 	return *this;
-	
-	/*
-	for(int i = 0;i<r;++i){
-		for(int j = 0;j<rhs.c;++j){
-			for(int k = 0; k<c;++k){
-				val+=ptr[i*c+k]*rhs.ptr[k*rhs.c+j];
-			}
-			temp.ptr[i*rhs.c+j] = val;
-			val=0;
-		}
-	}
-	*/
-
-	//moving in tiles instead of rows, cols
-/*
-	for(int ii=0;ii<r;ii+=BLOCK){
-		for(int jj = 0;jj<frhs.r;jj+=BLOCK){
-			for(int kk=0;kk<c;kk+=BLOCK){
-				for(int i = ii; i<std::min(ii+BLOCK,(int)r);++i){
-					for(int j = jj; j<std::min(jj+BLOCK, (int)frhs.r);++j){
-						double sum = temp.ptr[i*rhs.c+j];
-						double *a = &ptr[i*c+kk];
-						double *b=&frhs.ptr[j*frhs.c+kk];
-						for(int k = kk;k<std::min(BLOCK,(int)c - kk);++k){
-							sum+=a[k]*b[k];
-						}
-						temp.ptr[i*rhs.c+j]=sum;
-					}
-				}
-			}
-		}
-	}
-	this->swap(temp);
-	return *this;
-	*/
 	
 }
 
@@ -417,7 +391,7 @@ Matrix operator*(double i, const Matrix& m){
 
 Matrix operator/(Matrix &m, double d){
 	if(abs(d)<=epsilon)
-		throw std::invalid_argument("Cannot divide by zero");
+		throw std::runtime_error("Cannot divide by zero");
 	Matrix result = m;
 	result/=d;
 	return result;
@@ -432,7 +406,6 @@ Matrix &Matrix::operator/=(double d){
 }
 
 double Matrix::operator()(int i, int j){
-	check(i,j);
 	return ptr[i*c+j];
 }
 
@@ -457,7 +430,7 @@ Matrix Matrix::inverse()const{
 	}
 
 	//Inverse of 2*2 matrix
-	Matrix m(r,c, {at(1,1),-1*at(0,1),-1*at(1,0),at(0,0)});
+	Matrix m(r,c, {ptr[3],-1*ptr[1],-1*ptr[2],ptr[0]});
 	m = m/d;
 	return m;
 

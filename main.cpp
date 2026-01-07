@@ -18,6 +18,7 @@ int main(){
 	SetThreadAffinityMask(GetCurrentThread(),1);
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 #endif
+	
 	constexpr int  WARMUP= 50;
 	constexpr int RUNS= 1000;
 	constexpr int ROUNDS = 7;
