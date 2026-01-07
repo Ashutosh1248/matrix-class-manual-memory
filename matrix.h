@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 #ifndef MATRIX_H
 #define MATRIX_H
 
